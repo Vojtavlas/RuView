@@ -1,5 +1,9 @@
 # π RuView
 
+> [!CAUTION]
+> **Honest fork of [`ruvnet/RuView`](https://github.com/ruvnet/RuView).**
+> Marketing badges without evidence were removed, single-machine/unmeasured numbers are labeled as such, and deferred integrations are marked deferred. Upstream `PROOF.md` (reproduce-or-retract, incl. test counts) is kept as-is — run `bash scripts/prove.sh` and judge for yourself.
+
 <p align="center">
   <a href="https://cognitum.one/seed">
     <img src="assets/ruview-hero-h3-v3.gif" alt="RuView - WiFi DensePose — animated visualization of real-time pose estimation, breathing, and heart-rate sensing through WiFi" width="100%">
@@ -7,15 +11,15 @@
 </p>
 
 
-## **See through walls with WiFi** ##
+## Sense presence and motion through walls with WiFi (research prototype) ##
 
-**Turn ordinary WiFi into a spatial intelligence / sensing system.** Detect people, measure breathing and heart rate, track movement, and monitor rooms — through walls, in the dark, with no cameras or wearables. Just physics.
+**Turn ordinary WiFi into a spatial intelligence / sensing system.** Detect people, measure breathing and heart rate, track movement, and monitor rooms — through walls, in the dark, with no cameras or wearables. Research prototype: requires CSI-capable hardware, per-room calibration, and independent validation; vital signs are experimental, not medical.
 
-Works natively with the four major smart-home ecosystems: **[Home Assistant](docs/integrations/home-assistant.md)** via the HA-DISCO MQTT publisher, **[Apple Home & HomePod](docs/user-guide-apple-homepod.md)** as a discoverable HAP-1.1 bridge, **[Google Home](docs/integrations/home-assistant.md)** + **[Amazon Alexa](docs/integrations/home-assistant.md)** via the same HA bridge or a [Matter](docs/adr/ADR-122-bfld-ruview-ha-matter-exposure.md) endpoint. Siri, Google Assistant, and Alexa can voice presence and vitals by room with zero custom skills.
+Works with **[Home Assistant](docs/integrations/home-assistant.md)** via the shipped HA-DISCO MQTT publisher. Apple Home / Google Home / Alexa support via a Matter/HAP bridge is **experimental and deferred** (see [ADR-122](docs/adr/ADR-122-bfld-ruview-ha-matter-exposure.md) and [Matter crate status](v2/crates/cog-ha-matter/Cargo.toml)) — per-room voice announcements are not a validated feature.
 
-[![Works with Home Assistant](https://img.shields.io/badge/Works%20with-Home%20Assistant-blue?logo=home-assistant&logoColor=white&labelColor=41BDF5)](docs/integrations/home-assistant.md) [![Works with Matter](https://img.shields.io/badge/Works%20with-Matter-blue?labelColor=4285F4)](docs/adr/ADR-122-bfld-ruview-ha-matter-exposure.md) [![Works with Apple Home](https://img.shields.io/badge/Works%20with-Apple%20Home-black?logo=apple)](docs/user-guide-apple-homepod.md) [![Works with Google Home](https://img.shields.io/badge/Works%20with-Google%20Home-blue?logo=googlehome)](docs/integrations/home-assistant.md) [![Works with Alexa](https://img.shields.io/badge/Works%20with-Alexa-blue?logo=amazon&logoColor=white&labelColor=00CAFF)](docs/integrations/home-assistant.md)
+[![Works with Home Assistant](https://img.shields.io/badge/Works%20with-Home%20Assistant-blue?logo=home-assistant&logoColor=white&labelColor=41BDF5)](docs/integrations/home-assistant.md)
 
-> Drop into any **Home Assistant** install with one `--mqtt` flag. Or pair into **Apple Home / Google Home / Alexa / SmartThings** as a Matter Bridge. Ships 21 entities per node (11 raw signals + 10 inferred semantic states: someone-sleeping, possible-distress, room-active, elderly-inactivity-anomaly, meeting-in-progress, bathroom-occupied, fall-risk-elevated, bed-exit, no-movement, multi-room-transition) plus 3 starter HA Blueprints. See [`docs/integrations/home-assistant.md`](docs/integrations/home-assistant.md) · [ADR-115](docs/adr/ADR-115-home-assistant-integration.md).
+> Drop into any **Home Assistant** install with one `--mqtt` flag (shipped; starter blueprints in `examples/ha-blueprints/`). Pairing into **Apple Home / Google Home / Alexa / SmartThings** via a Matter bridge is **deferred, not shipped**. Upstream "21 entities per node" is unverified against its own docs ("17+ entities") — check the entity list before quoting a number. See [`docs/integrations/home-assistant.md`](docs/integrations/home-assistant.md) · [ADR-115](docs/adr/ADR-115-home-assistant-integration.md).
 
 ### π RuView is a WiFi sensing platform that turns radio signals into spatial intelligence.
 
@@ -78,33 +82,30 @@ RuView turns ordinary WiFi into a contactless sensor. A $9 ESP32 board reads the
 
 [![Rust 1.85+](https://img.shields.io/badge/rust-1.85+-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 1463](https://img.shields.io/badge/tests-1463%20passed-brightgreen.svg)](https://github.com/ruvnet/RuView)
 [![Docker: multi-arch](https://img.shields.io/badge/docker-amd64%20%2B%20arm64-blue.svg)](https://hub.docker.com/r/ruvnet/wifi-densepose)
-[![Vital Signs](https://img.shields.io/badge/vital%20signs-breathing%20%2B%20heartbeat-red.svg)](#vital-sign-detection)
 [![ESP32 Ready](https://img.shields.io/badge/ESP32--S3-CSI%20streaming-purple.svg)](#esp32-s3-hardware-pipeline)
 [![crates.io](https://img.shields.io/crates/v/wifi-densepose-ruvector.svg)](https://crates.io/crates/wifi-densepose-ruvector)
-[![Downloads](https://img.shields.io/badge/downloads-10M%2B-brightgreen.svg)](#-edge-module-catalog)
 
  
 > | What | How | Speed / scale |
 > |------|-----|---------------|
-> | 🫁 **Breathing rate** | Bandpass 0.1–0.5 Hz on wrapped phase, circular variance, zero-crossing BPM ([#593](https://github.com/ruvnet/RuView/issues/593)) | 6–30 BPM, real-time |
-> | 💓 **Heart rate** | Bandpass 0.8–2.0 Hz, zero-crossing BPM | 40–120 BPM, real-time |
+> | 🫁 **Breathing rate** | Bandpass 0.1–0.5 Hz on wrapped phase, circular variance, zero-crossing BPM ([#593](https://github.com/ruvnet/RuView/issues/593)) | 6–30 BPM design range; DSP implemented, on-body accuracy unvalidated, not medical |
+> | 💓 **Heart rate** | Bandpass 0.8–2.0 Hz, zero-crossing BPM | 40–120 BPM design range; experimental, not medical |
 > | 👤 **Presence detection** | Trained head on Hugging Face ([`ruvnet/wifi-densepose-pretrained`](https://huggingface.co/ruvnet/wifi-densepose-pretrained); v2 encoder = 82.3% held-out temporal-triplet acc, honestly re-benchmarked) + a phase-variance fallback that needs no model | < 1 ms, ~30 s ambient calibration |
-> | 🧬 **CSI embeddings** | 128-dim contrastive encoder shipped on Hugging Face, 4-bit quantised variant fits in 8 KB | **164,183 emb/s** on M4 Pro |
+> | 🧬 **CSI embeddings** | 128-dim contrastive encoder shipped on Hugging Face, 4-bit quantised variant fits in 8 KB | ~164K emb/s, single M4 Pro measurement, no in-repo reproducer |
 > | 🦴 **17-keypoint pose estimation** | `cog-pose-estimation` Cog v0.0.1 — signed aarch64 + x86_64 binaries on GCS, loads `pose_v1.safetensors` via Candle (the committed `pose_v1` is a **first-cut** on-device model: PCK@20 = 3.0%, below the ADR-079 ≥35% target, and its runtime path is still a `confidence=0` stub — see [Model weights: what's real, what's not](#model-weights-whats-real-whats-not); the **82.69%** figure below is the separate published MM-Fi benchmark, not this live cog). Train your own from paired data in 2.1 s on an RTX 5080 ([ADR-101](docs/adr/ADR-101-pose-estimation-cog.md), [benchmarks](docs/benchmarks/pose-estimation-cog.md)). **SOTA on MM-Fi:** [`ruvnet/wifi-densepose-mmfi-pose`](https://huggingface.co/ruvnet/wifi-densepose-mmfi-pose) hits **82.69% torso-PCK@20** (ensemble 83.59%), beating MultiFormer (72.25%) and CSI2Pose (68.41%) on the matched MM-Fi `random_split` protocol — self-corrected and auditable on [AetherArena](https://huggingface.co/spaces/ruvnet/aether-arena) | 8.4 ms cold-start on a Pi 5 |
 > | 🚶 **Motion / activity** | Motion-band power + phase acceleration | Real-time |
-> | 🤸 **Fall detection** | Phase-acceleration threshold + 3-frame debounce + 5 s cooldown ([#263](https://github.com/ruvnet/RuView/issues/263)) | < 200 ms |
+> | 🤸 **Fall detection** | Phase-acceleration threshold + 3-frame debounce + 5 s cooldown ([#263](https://github.com/ruvnet/RuView/issues/263)) | latency unmeasured; threshold + debounce + cooldown implemented |
 > | 🧮 **Multi-person count** | Adaptive P95 normalisation + runtime-tunable dedup factor (`/api/v1/config/dedup-factor`, [#491](https://github.com/ruvnet/RuView/pull/491)). Six specialised learned counters available as Cogs: `occupancy-zones`, `elevator-count`, `queue-length`, `customer-flow`, `clean-room`, `person-matching` | Real-time, self-calibrating |
 > | 🌍 **World model prediction** | OccWorld TransVQVAE — 15-frame future occupancy prediction, 209 ms inference, 3.4 GB VRAM on RTX 5080; fine-tune on your space with `occworld_retrain.py` ([ADR-147](docs/adr/ADR-147-nvidia-cosmos-world-foundation-model-integration.md)) | 15 frames × 200×200×16 vox |
-> | 🧱 **Through-wall sensing** | Fresnel-zone geometry + multipath modeling | Up to ~5 m, signal-dependent |
-> | 🧠 **Edge intelligence** | **105-cog catalog** ([ADR-102](docs/adr/ADR-102-edge-module-registry.md)) live from `app-registry.json` — health, security, building, retail, industrial, research, AI, swarm, signal, network, and developer modules. Optional Cognitum Seed adds persistent vector store + kNN + witness chain | $140 total BOM |
-> | 🎯 **Camera-free pre-training** | Self-supervised contrastive encoder, 12.2M training steps on 60K frames, shipped on Hugging Face | 84 s/epoch retrain on M4 Pro |
-> | 📷 **Camera-supervised fine-tune** | MediaPipe + ESP32 CSI paired training, end-to-end Candle pipeline on RTX 5080 ([ADR-079](docs/adr/ADR-079-camera-supervised-pose-finetune.md)) | 2.1 s for 400 epochs (~5 ms/epoch) |
+> | 🧱 **Through-wall sensing** | Fresnel-zone geometry + multipath modeling | range unmeasured; Fresnel model only, signal-dependent |
+> | 🧠 **Edge intelligence** | **105-cog catalog** ([ADR-102](docs/adr/ADR-102-edge-module-registry.md)) served from a remote registry (not vendored in this repo) — health, security, building, retail, industrial, research, AI, swarm, signal, network, and developer modules. Optional Cognitum Seed adds persistent vector store + kNN + witness chain | $140 total BOM |
+> | 🎯 **Camera-free pre-training** | Self-supervised contrastive encoder, 12.2M training steps on 60K frames, shipped on Hugging Face | 84 s/epoch, single M4 Pro measurement |
+> | 📷 **Camera-supervised fine-tune** | MediaPipe + ESP32 CSI paired training, end-to-end Candle pipeline on RTX 5080 ([ADR-079](docs/adr/ADR-079-camera-supervised-pose-finetune.md)) | 2.1 s for 400 epochs on RTX 5080 (single-machine measurement) |
 > | 📡 **Multi-frequency mesh** | Channel hopping across 6 bands, TDM slot scheduling ([ADR-029](docs/adr/ADR-029-multifrequency-mesh.md)) | 3× sensing bandwidth |
-> | 🌐 **3D point cloud fusion** | Camera depth (MiDaS) + WiFi CSI + mmWave radar → unified spatial model | 22 ms pipeline · 19K+ points/frame |
+> | 🌐 **3D point cloud fusion** | Camera depth (MiDaS) + WiFi CSI + mmWave radar → unified spatial model | ~22 ms pipeline · ~19K points/frame (single-machine measurement) |
 >
-> Browse the full 105-module catalog (with practical descriptions, sizes, and difficulty) below in [🧩 Edge Module Catalog](#-edge-module-catalog), or visit [seed.cognitum.one/store](https://seed.cognitum.one/store).
+> Browse the 105-module catalog below (remote registry — only a few cogs ship in this repo; entries describe registry offerings, not vendored code) in [🧩 Edge Module Catalog](#-edge-module-catalog), or visit [seed.cognitum.one/store](https://seed.cognitum.one/store).
 >
 > 🤗 **Pretrained weights**: download from [`ruvnet/wifi-densepose-pretrained`](https://huggingface.co/ruvnet/wifi-densepose-pretrained) — see [Loading the pretrained model](#loading-the-pretrained-model) below for one-command setup.
 
@@ -286,7 +287,7 @@ Add signed modules for health, security, buildings, industry, research, AI, and 
 <details>
 <summary><strong>Browse the full edge module catalog</strong></summary>
 
-Browse and install modules at [seed.cognitum.one/store](https://seed.cognitum.one/store) or on your appliance at `http://<appliance>:9000/cogs`. Each module is a small signed binary that runs beside the sensing stack. The appliance updates the catalog over the air and verifies every module before installation ([ADR-100](docs/adr/ADR-100-cog-packaging-specification.md), [ADR-102](docs/adr/ADR-102-edge-module-registry.md)).
+Browse and install modules at [seed.cognitum.one/store](https://seed.cognitum.one/store) or on your appliance at `http://<appliance>:9000/cogs`. Each module is a small signed binary that runs beside the sensing stack. The appliance updates the catalog over the air and verifies every module before installation ([ADR-100](docs/adr/ADR-100-cog-packaging-specification.md), [ADR-102](docs/adr/ADR-102-edge-module-registry.md)). Catalog entries describe registry offerings; maturity varies — research, AI, and exotic entries are experimental demos, not validated detectors.
 
 ### 🫀 Health &mdash; <sub>14 modules</sub>
 
@@ -489,13 +490,15 @@ model-specific adapters. See the [model compatibility boundary](docs/user-guide.
 
 ## 🏢 Use Cases & Applications
 
+> **Metrics honesty note:** "Key Metric" values below (latencies, accuracies, savings) are design targets or illustrative estimates, not measured results, unless the cell links a benchmark or witness record.
+
 > **Safety boundary:** these are research and prototype applications, not medical devices,
 > emergency systems, or safety-certified controls. Vital-sign and pose outputs require independent
 > validation on the exact hardware, room, subjects, and failure conditions before operational use.
 
-WiFi sensing works anywhere WiFi exists. No new hardware in most cases — just software on existing access points or a $8 ESP32 add-on. Because there are no cameras, deployments avoid privacy regulations (GDPR video, HIPAA imaging) by design.
+WiFi sensing works anywhere WiFi exists. No new hardware in most cases — just software on existing access points or a $8 ESP32 add-on. Because there are no cameras, video-specific obligations don't apply — but sensing identifiable persons over WiFi can still be personal-data processing under GDPR and similar regimes; assess locally before deploying.
 
-**Scaling:** Each AP distinguishes ~3-5 people (56 subcarriers). Multi-AP multiplies linearly — a 4-AP retail mesh covers ~15-20 occupants. No hard software limit; the practical ceiling is signal physics.
+**Scaling (rough, unvalidated estimate):** Each AP is *hoped* to distinguish ~3-5 people (56 subcarriers); multi-AP scaling is assumed linear — e.g. a 4-AP mesh covering ~15-20 occupants. Treat as a starting hypothesis, not a measured result; the practical ceiling is signal physics.
 
 | | Why WiFi sensing wins | Traditional alternative |
 |---|----------------------|----------------------|
@@ -713,7 +716,7 @@ Start with the user, build, and calibration guides; expand for the full referenc
 | [Build Guide](docs/build-guide.md) | Building from source (Rust and Python) |
 | [Calibration & Room Training Guide](docs/calibration-guide.md) | What `calibrate`/`enroll`/`train-room` actually enforce: minimum frame counts, per-anchor quality gates, the pet/small-motion presence-detection caveat, and empty-room baseline conditions — grounded in the real code, not just ADR-135/151 |
 | [Trust State & Engine Errors](docs/trust-and-engine-errors.md) | What `engine_error_count` and `demoted` mean on `/api/v1/status`, exact trigger conditions, the current diagnostic gap (no per-cause breakdown), the `WDP_GUARD_INTERVAL_US` recovery path, and why a converted Hugging Face model isn't shown to be the cause in code |
-| [**Home Assistant + Matter Integration**](docs/integrations/home-assistant.md) | **Works with Home Assistant** via MQTT auto-discovery + **Works with Matter** (Apple Home / Google Home / Alexa / SmartThings) — full entity catalog, 3 starter blueprints, Lovelace dashboards, privacy mode, threshold tuning ([ADR-115](docs/adr/ADR-115-home-assistant-integration.md)). |
+| [**Home Assistant + Matter Integration**](docs/integrations/home-assistant.md) | **Works with Home Assistant** via MQTT auto-discovery; Matter bridge (Apple Home / Google Home / Alexa / SmartThings) **deferred** — full entity catalog, 3 starter blueprints, Lovelace dashboards, privacy mode, threshold tuning ([ADR-115](docs/adr/ADR-115-home-assistant-integration.md)). |
 | [**BFLD — Beamforming Feedback Layer for Detection**](v2/crates/wifi-densepose-bfld/README.md) | New privacy-gated WiFi sensing layer that measures + structurally prevents identity leakage from 802.11ac/ax Beamforming Feedback Information. Three type-enforced invariants (raw BFI never exits node, identity embedding is in-RAM-only, cross-site correlation cryptographically impossible via per-site BLAKE3 keyed hash + daily rotation). Ships full operator surface (`BfldPipeline`, `BfldPipelineHandle`, the Soul Signature §3.6 per-channel matcher `EnrolledMatcher`/`SoulMatchOracle` — experimental; named identity is data-gated, **measured** as not-separable on WiFi-only channels alone), MQTT topic router + HA-DISCO + availability + LWT, 3 operator HA blueprints, two runnable examples, eclipse-mosquitto:2 CI service container. 327+ tests. [ADR-118](docs/adr/ADR-118-bfld-beamforming-feedback-layer-for-detection.md) umbrella + sub-ADRs [119](docs/adr/ADR-119-bfld-frame-format-and-wire-protocol.md)/[120](docs/adr/ADR-120-bfld-privacy-class-and-hash-rotation.md)/[121](docs/adr/ADR-121-bfld-identity-risk-scoring.md)/[122](docs/adr/ADR-122-bfld-ruview-ha-matter-exposure.md)/[123](docs/adr/ADR-123-bfld-capture-path-nexmon-and-esp32.md). Research dossier: [`docs/research/BFLD/`](docs/research/BFLD/) (11 files, 13,544 words). |
 | [**SENSE-BRIDGE — rvagent MCP server**](tools/ruview-mcp/README.md) | Dual-transport MCP server (`@ruvnet/rvagent`) bridging the RuView sensing stack to AI agents (Claude Code, Cursor, ruflo swarms). 6 tools wired: `ruview.presence.now`, `ruview.vitals.get_{breathing,heart_rate,all}`, `ruview.bfld.last_scan`, `ruview.bfld.subscribe`. stdio + Streamable HTTP (`POST /mcp`, Origin-validated, bearer-token auth, `127.0.0.1` bind). Full 20-tool Zod schema barrel + 5 RUVIEW-POLICY governance tools. 93 tests. [ADR-124](docs/adr/ADR-124-rvagent-mcp-ruvector-npm-integration.md). Try: `npx @ruvnet/rvagent stdio`. |
 | [Semantic Primitives — Precision/Recall](docs/integrations/semantic-primitives-metrics.md) | Per-primitive F1 on the held-out paired-capture set: someone-sleeping, possible-distress, room-active, elderly-inactivity-anomaly, meeting, bathroom, fall-risk, bed-exit, no-movement, multi-room. |
@@ -744,12 +747,6 @@ Start with the user, build, and calibration guides; expand for the full referenc
 ## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
-## 🤝 Creator Affiliate Program
-
-**For TikTok · Instagram · YouTube creators** — earn **25% on every Cognitum sale** you refer. The RuFlo, RuView, and RuVector videos you're already making have done millions of views; get paid for the orders they drive. Click-tracking activates instantly; commissions activate after a quick manual review (usually under 24 hours).
-
-[Apply now → cognitum.one/affiliate](https://cognitum.one/affiliate)
 
 ## 📞 Support
 
