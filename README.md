@@ -17,6 +17,19 @@ bash scripts/prove.sh            # workspace gate + assertion tests (147 lines, 
 python archive/v1/data/proof/verify.py   # must print VERDICT: PASS (deterministic SHA-256 replay)
 ```
 
+### Execution evidence (fork author, Windows + Rust 1.89 — ran, not read)
+
+| Check | Result |
+|-------|--------|
+| `archive/v1` deterministic proof | **VERDICT: PASS**, bit-exact SHA-256 (243,200 feature bytes) |
+| `cargo test -p wifi-densepose-vitals` | 102 passed + 1 doc-test, incl. synthetic-sine heartbeat detection and noise-is-never-valid |
+| `cargo test -p wifi-densepose-signal` | 519 passed |
+| `cargo test -p wifi-densepose-bfld` (+ `--test soul_match`) | 25 + 13 passed, incl. `cardiac_alone_cannot_separate_identity_matches_audit` |
+| `cargo test -p cog-person-count` | 19 passed, incl. `untrained_class_argmax_is_flagged_low_confidence` |
+| `cargo test -p cog-pose-estimation default_config` | `default_config_emits_frames_with_real_model` passed |
+| Python bindings (wheel built locally with maturin, installed, pytest) | 20 passed (`python/tests/test_vitals.py`) |
+| NOT run here | Firmware build (no ESP-IDF), full-workspace suite, hosted weight downloads |
+
 `PROOF.md` grades each claim MEASURED (re-ran here), CLAIMED (cited, not reproduced),
 or GATED (needs hardware/data/checkpoint not shipped). Trust the grade, not headlines.
 
@@ -27,7 +40,7 @@ or GATED (needs hardware/data/checkpoint not shipped). Trust the grade, not head
 | Breathing DSP, 0.1–0.5 Hz bandpass | Implemented, on-body accuracy unvalidated | `v2/crates/wifi-densepose-vitals/src/breathing.rs` |
 | Heart-rate DSP, 0.8–2.0 Hz bandpass | Implemented, experimental, not medical | `v2/crates/wifi-densepose-vitals/src/heartrate.rs` |
 | Presence: trained head + model-free phase-variance path | Implemented; head accuracy per project docs only | `v2/crates/wifi-densepose-sensing-server/src/`, HF repo `ruvnet/wifi-densepose-pretrained` (external) |
-| Person counting, fall pipeline (threshold + debounce + cooldown) | Wired; latencies unmeasured | `v2/crates/wifi-densepose-sensing-server/src/`, `v2/crates/cog-person-count/` |
+| Person counting (dedup divisor default 3.0, runtime `/api/v1/config/dedup-factor`), fall pipeline (raw events + rolling-window risk score) | Wired end-to-end; cog falls back to single-person zero-confidence stub without trained weights; latencies unmeasured | `src/main.rs` (dedup endpoints), `src/semantic/fall_risk.rs`, `v2/crates/cog-person-count/src/inference.rs`, `fusion.rs` |
 | Through-wall model (Fresnel-zone geometry) | Math model only; range unmeasured | `v2/crates/wifi-densepose-signal/src/fresnel.rs` |
 | ESP32-S3/C6 firmware (edge DSP, CSI collection) | Real ESP-IDF; NDP frame still a TODO placeholder, mocks QEMU-only | `firmware/esp32-csi-node/main/edge_processing.c`, `csi_collector.c`, `mock_csi.c` (`CONFIG_CSI_MOCK_ENABLED`-gated) |
 | Sensing server (`sensing-server` binary, v0.3.5) with `--mqtt` HA-DISCO publisher | Shipped | `v2/crates/wifi-densepose-sensing-server/src/cli.rs`, `src/mqtt/discovery.rs` |
@@ -66,6 +79,7 @@ Requires Rust 1.89 (`v2/rust-toolchain.toml`) and, for firmware, ESP-IDF.
 ```bash
 git submodule update --init --recursive   # 10 submodules (ruvector, rvcsi, rufield, …);
                                           # without this, vendor/ and 4 v2/crates dirs are EMPTY
+                                          # (verified: cargo fails workspace resolution on a fresh clone)
 cd v2 && cargo test --workspace --no-default-features
 ```
 
